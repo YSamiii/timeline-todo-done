@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Timeline Plan / Done iPhone App v11</title>
+  <meta name="theme-color" content="#111827" />
+  <meta name="application-name" content="Plan Done" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Plan Done" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png" />
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d1d5db;
+      --border: #e5e7eb;
+      --todo: #2563eb;
+      --done: #16a34a;
+      --direct: #7c3aed;
+      --continue: #d97706;
+      --danger: #dc2626;
+      --active: #0891b2;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --radius: 18px;
+      --safe-top: env(safe-area-inset-top);
+      --safe-bottom: env(safe-area-inset-bottom);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      max-width: 1220px;
+      margin: 0 auto;
+      padding: calc(24px + var(--safe-top)) 18px calc(72px + var(--safe-bottom));
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 4vw, 38px);
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+      max-width: 800px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    button, input, textarea, select { font: inherit; }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: #111827;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.08s ease, opacity 0.15s ease;
+      white-space: nowrap;
+      min-height: 40px;
+      touch-action: manipulation;
+    }
+
+    button:hover { opacity: 0.9; }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    button.secondary { background: #e5e7eb; color: #111827; }
+    button.warning { background: var(--continue); }
+    button.danger { background: var(--danger); }
+    button.sync { background: #374151; }
+    button.timer { background: var(--active); }
+    button.done { background: var(--done); }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .sync-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-size: 13px;
+    }
+
+    .sync-status {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      color: var(--muted);
+    }
+
+    .day-strip {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .day-title {
+      font-size: 18px;
+      font-weight: 850;
+      letter-spacing: -0.02em;
+    }
+
+    .day-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .day-controls input[type="date"] {
+      width: 160px;
+      min-height: 40px;
+      padding: 9px 10px;
+    }
+
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #9ca3af;
+      flex: 0 0 auto;
+    }
+    .status-dot.online { background: var(--done); }
+    .status-dot.error { background: var(--danger); }
+    .status-dot.pending { background: var(--continue); }
+
+    .composer {
+      padding: 16px;
+      margin-bottom: 22px;
+    }
+
+    .composer-title {
+      margin: 0 0 10px;
+      font-size: 14px;
+      font-weight: 750;
+      color: var(--text);
+    }
+
+    .composer-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 178px 178px 135px auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 12px;
+      background: white;
+      color: var(--text);
+      outline: none;
+      min-height: 42px;
+    }
+
+    textarea {
+      min-height: 120px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .composer-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      padding: 14px;
+      min-height: 86px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 850;
+      letter-spacing: -0.03em;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .section-labels {
+      display: grid;
+      grid-template-columns: 1fr 110px 1fr;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .section-labels div:first-child { text-align: right; }
+    .section-labels div:last-child { text-align: left; }
+
+    .timeline-shell {
+      position: relative;
+      display: grid;
+      gap: 16px;
+      padding-bottom: 20px;
+    }
+
+    .timeline-shell::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--line);
+      transform: translateX(-1px);
+    }
+
+    .timeline-row {
+      display: grid;
+      grid-template-columns: 1fr 110px 1fr;
+      gap: 16px;
+      align-items: start;
+      position: relative;
+    }
+
+    .left-col, .right-col { min-width: 0; }
+
+    .time-node {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      justify-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      padding-top: 8px;
+      text-align: center;
+    }
+
+    .dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: block;
+      background: var(--todo);
+      border: 4px solid var(--bg);
+      box-shadow: 0 0 0 1px var(--line);
+    }
+
+    .dot.done { background: var(--done); }
+    .dot.direct { background: var(--direct); }
+    .dot.continue { background: var(--continue); }
+    .dot.active { background: var(--active); }
+
+    .time-range {
+      display: grid;
+      gap: 2px;
+      line-height: 1.25;
+    }
+
+    .time-range strong { color: var(--text); font-size: 12px; }
+
+    .task-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+    }
+
+    .block-card {
+      min-height: var(--block-height, 82px);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .block-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 6px;
+      border-radius: 16px 0 0 16px;
+      background: var(--block-color, var(--todo));
+    }
+
+    .block-card.plan { --block-color: var(--todo); }
+    .block-card.plan.done { --block-color: var(--done); }
+    .block-card.plan.continue { --block-color: var(--continue); }
+    .block-card.plan.active { --block-color: var(--active); }
+    .block-card.actual { --block-color: var(--done); }
+    .block-card.actual.partial { --block-color: var(--continue); }
+    .block-card.direct { --block-color: var(--direct); }
+
+    .task-title {
+      font-weight: 780;
+      line-height: 1.35;
+      word-break: break-word;
+      padding-left: 4px;
+    }
+
+    .task-meta {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 12px;
+      padding-left: 4px;
+    }
+
+    .pill {
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      color: #4b5563;
+      border-radius: 999px;
+      padding: 4px 8px;
+    }
+
+    .pill.pending { background: #eff6ff; border-color: #bfdbfe; color: var(--todo); }
+    .pill.done { background: #ecfdf5; border-color: #bbf7d0; color: var(--done); }
+    .pill.direct { background: #f5f3ff; border-color: #ddd6fe; color: var(--direct); }
+    .pill.late { background: #fff7ed; border-color: #fed7aa; color: var(--continue); }
+    .pill.active { background: #ecfeff; border-color: #a5f3fc; color: var(--active); }
+    .pill.continue { background: #fff7ed; border-color: #fed7aa; color: var(--continue); }
+    .pill.partial { background: #fff7ed; border-color: #fed7aa; color: var(--continue); }
+
+    .timer-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+    }
+
+    .timer-value {
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+    }
+
+    .timer-note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .direct-timer-panel {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 16px;
+      background: #f5f3ff;
+      border: 1px solid #ddd6fe;
+    }
+
+    .direct-timer-actions {
+      margin-top: 0;
+      padding-left: 0;
+      justify-content: flex-end;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      padding-left: 4px;
+    }
+
+    .actions button {
+      font-size: 12px;
+      padding: 8px 10px;
+      min-height: 34px;
+    }
+
+    .done-stack { display: grid; gap: 8px; }
+
+    .empty {
+      position: relative;
+      z-index: 1;
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    .placeholder {
+      padding: 12px 14px;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.55);
+      font-size: 13px;
+    }
+
+    .reference-card {
+      background: rgba(255,255,255,0.7);
+      box-shadow: none;
+      min-height: auto;
+    }
+
+    .reference-card .task-title {
+      font-size: 13px;
+    }
+
+    dialog {
+      border: 0;
+      border-radius: 18px;
+      padding: 0;
+      width: min(580px, calc(100% - 28px));
+      box-shadow: 0 24px 80px rgba(0,0,0,0.22);
+    }
+
+    dialog::backdrop { background: rgba(17, 24, 39, 0.42); }
+
+    .dialog-inner { padding: 18px; }
+    .dialog-inner h2 { margin: 0 0 12px; font-size: 20px; }
+    .dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .dialog-grid { display: grid; gap: 12px; }
+    .hint { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .form-note { margin-top: 10px; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+
+    .install-steps {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .install-note {
+      padding: 12px;
+      border-radius: 14px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+    }
+
+    .inline-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 2px 6px;
+    }
+
+    @media (max-width: 1060px) {
+      .stats { grid-template-columns: repeat(3, 1fr); }
+      .composer-grid { grid-template-columns: 1fr 180px 120px; }
+      .composer-grid button { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 780px) {
+      .app { padding-left: 12px; padding-right: 12px; }
+      header { display: block; }
+      .toolbar { justify-content: flex-start; margin-top: 12px; }
+      .sync-strip { align-items: flex-start; flex-direction: column; }
+      .day-strip { align-items: flex-start; flex-direction: column; }
+      .day-controls { justify-content: flex-start; width: 100%; }
+      .day-controls input[type="date"] { flex: 1 1 150px; }
+      .composer-grid { grid-template-columns: 1fr; }
+      .composer-grid button { grid-column: auto; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .timeline-shell::before { left: 24px; }
+      .section-labels { display: none; }
+      .timeline-row {
+        grid-template-columns: 48px 1fr;
+        gap: 10px;
+      }
+      .time-node { grid-column: 1; grid-row: 1; }
+      .left-col, .right-col { grid-column: 2; }
+      .right-col { margin-top: 8px; }
+      .block-card { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <div>
+        <h1>Timeline Plan / Done</h1>
+        <div class="subtitle">左边保留计划 time block；右边记录实际 time block。按日期切换，每次只显示选中日期的一天时间轴。Direct Done 可选择开始/结束时间并自动计算持续时间，也可直接用计时器记录；支持计划计时、今天继续、Firebase 多设备同步，并已加入 iPhone / iPad 主屏幕安装支持。</div>
+      </div>
+      <div class="toolbar">
+        <button class="sync" id="syncBtn">同步设置</button>
+        <button class="secondary" id="installBtn" hidden>安装 App</button>
+        <button class="secondary" id="exportBtn">导出 JSON</button>
+        <button class="secondary" id="importBtn">导入 JSON</button>
+        <input type="file" id="importFile" accept="application/json" hidden />
+        <button class="danger" id="clearBtn">清空</button>
+      </div>
+    </header>
+
+    <section class="card sync-strip">
+      <div class="sync-status">
+        <span class="status-dot" id="syncDot"></span>
+        <span id="syncStatus">本地模式：数据只保存在当前设备。</span>
+      </div>
+      <div class="hint" id="syncHint">配置 Firebase 并登录同一账号后，可在手机、iPad、电脑之间同步。</div>
+    </section>
+
+    <section class="card day-strip">
+      <div>
+        <div class="day-title" id="selectedDateTitle">今日时间轴</div>
+        <div class="hint">只显示选中日期的 Plan / Actual blocks。其他日期的数据仍保留，可通过日期切换查看。</div>
+      </div>
+      <div class="day-controls">
+        <button class="secondary" id="prevDayBtn" type="button">前一天</button>
+        <input id="dateInput" type="date" />
+        <button class="secondary" id="todayBtn" type="button">今天</button>
+        <button class="secondary" id="nextDayBtn" type="button">后一天</button>
+      </div>
+    </section>
+
+    <section class="card composer">
+      <p class="composer-title">提前计划</p>
+      <form id="taskForm" class="composer-grid">
+        <label>
+          计划任务
+          <input id="titleInput" required placeholder="例如：整理宝宝绘本清单" autocomplete="off" />
+        </label>
+        <label>
+          开始时间
+          <input id="timeInput" type="datetime-local" />
+        </label>
+        <label>
+          预计分钟
+          <input id="durationInput" type="number" inputmode="numeric" min="5" step="5" value="30" />
+        </label>
+        <label>
+          类别
+          <select id="categoryInput">
+            <option value="生活">生活</option>
+            <option value="工作">工作</option>
+            <option value="育儿">育儿</option>
+            <option value="学习">学习</option>
+            <option value="其他">其他</option>
+          </select>
+        </label>
+        <button type="submit">新增计划</button>
+      </form>
+
+      <div class="composer-divider"></div>
+
+      <p class="composer-title">直接记录 Done</p>
+      <form id="doneForm" class="composer-grid">
+        <label>
+          完成事项
+          <input id="doneTitleInput" required placeholder="例如：临时打电话预约 daycare tour" autocomplete="off" />
+        </label>
+        <label>
+          开始时间
+          <input id="doneStartInput" type="datetime-local" />
+        </label>
+        <label>
+          结束时间
+          <input id="doneEndInput" type="datetime-local" />
+        </label>
+        <label>
+          类别
+          <select id="doneCategoryInput">
+            <option value="生活">生活</option>
+            <option value="工作">工作</option>
+            <option value="育儿">育儿</option>
+            <option value="学习">学习</option>
+            <option value="其他">其他</option>
+          </select>
+        </label>
+        <button type="submit">直接新增 Done</button>
+      </form>
+      <div class="hint form-note" id="doneDurationPreview">自动计算用时：15m</div>
+      <div class="direct-timer-panel" id="directTimerPanel">
+        <div>
+          <div class="timer-value" id="directTimerValue">0:00</div>
+          <div class="timer-note" id="directTimerNote">Direct Done 计时器：适合临时开始做、结束后再保存为 Done。</div>
+        </div>
+        <div class="actions direct-timer-actions" id="directTimerActions"></div>
+      </div>
+      <div class="hint form-note">使用 Direct Done 计时器时，先输入完成事项和类别，开始计时；结束时点击“保存为 Direct Done”。</div>
+    </section>
+
+    <section class="stats">
+      <div class="card stat">
+        <div class="stat-value" id="planCount">0</div>
+        <div class="stat-label">Plan Blocks</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-value" id="doneCount">0</div>
+        <div class="stat-label">Actual Blocks</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-value" id="directDoneCount">0</div>
+        <div class="stat-label">Direct Done</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-value" id="continueCount">0</div>
+        <div class="stat-label">Today Continue</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-value" id="actualTimeCount">0m</div>
+        <div class="stat-label">Actual Time</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-value" id="completionRate">0%</div>
+        <div class="stat-label">Plan Completion</div>
+      </div>
+    </section>
+
+    <section class="section-labels">
+      <div>Plan / To-do Time Blocks（选中日期）</div>
+      <div></div>
+      <div>Actual Time Blocks（选中日期）</div>
+    </section>
+
+    <section id="timeline" class="timeline-shell"></section>
+  </main>
+
+  <dialog id="editDialog">
+    <form method="dialog" class="dialog-inner" id="editForm">
+      <h2>编辑计划</h2>
+      <div class="dialog-grid">
+        <input type="hidden" id="editId" />
+        <label>计划任务<input id="editTitle" required /></label>
+        <label>开始时间<input id="editTime" type="datetime-local" /></label>
+        <label>预计分钟<input id="editDuration" type="number" inputmode="numeric" min="5" step="5" /></label>
+        <label>类别
+          <select id="editCategory">
+            <option value="生活">生活</option>
+            <option value="工作">工作</option>
+            <option value="育儿">育儿</option>
+            <option value="学习">学习</option>
+            <option value="其他">其他</option>
+          </select>
+        </label>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" id="cancelEdit">取消</button>
+        <button type="submit">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="syncDialog">
+    <form method="dialog" class="dialog-inner" id="syncForm">
+      <h2>同步设置</h2>
+      <div class="dialog-grid">
+        <div class="hint">先在 Firebase 创建 Web App、开启 Authentication 的 Email/Password、开启 Firestore，然后把 Firebase config 粘贴到这里。同一账号登录后会同步同一份数据。</div>
+        <label>
+          Firebase config
+          <textarea id="firebaseConfigInput" spellcheck="false" placeholder='{
+  "apiKey": "...",
+  "authDomain": "...firebaseapp.com",
+  "projectId": "...",
+  "storageBucket": "...appspot.com",
+  "messagingSenderId": "...",
+  "appId": "..."
+}'></textarea>
+        </label>
+        <div class="button-row">
+          <button type="button" id="saveConfigBtn">保存配置</button>
+          <button type="button" class="secondary" id="removeConfigBtn">移除配置</button>
+        </div>
+        <label>邮箱<input id="emailInput" type="email" autocomplete="email" placeholder="you@example.com" /></label>
+        <label>密码<input id="passwordInput" type="password" autocomplete="current-password" placeholder="至少 6 位" /></label>
+        <div class="button-row">
+          <button type="button" id="registerBtn">注册并登录</button>
+          <button type="button" class="secondary" id="loginBtn">登录</button>
+          <button type="button" class="secondary" id="logoutBtn">退出登录</button>
+        </div>
+        <div class="button-row">
+          <button type="button" class="warning" id="uploadCloudBtn">用本机数据覆盖云端</button>
+          <button type="button" class="secondary" id="downloadCloudBtn">从云端拉取到本机</button>
+        </div>
+        <div class="hint" id="syncDialogStatus">未配置。</div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" id="closeSyncDialog">关闭</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="installDialog">
+    <form method="dialog" class="dialog-inner" id="installForm">
+      <h2>安装到 iPhone / iPad</h2>
+      <div class="dialog-grid">
+        <div class="install-note hint">这个版本是可安装的 PWA。需要先把整个文件夹部署到 HTTPS 网址；iPhone 不能直接从本地 zip 文件安装。</div>
+        <ol class="install-steps">
+          <li>在 iPhone / iPad 上用 <strong>Safari</strong> 打开你部署后的网址。</li>
+          <li>点击 Safari 底部或顶部的 <strong>分享</strong> 按钮。</li>
+          <li>选择 <strong>添加到主屏幕</strong>。</li>
+          <li>名称可保留为 <strong>Plan Done</strong>，然后点击 <strong>添加</strong>。</li>
+          <li>之后从主屏幕图标打开，会以接近原生 app 的独立窗口运行。</li>
+        </ol>
+        <div class="hint">部署前可以在电脑本地用 <span class="inline-code">python3 -m http.server 8080</span> 测试；真正安装和离线缓存建议使用 HTTPS 托管。</div>
+      </div>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" id="closeInstallDialog">关闭</button>
+      </div>
+    </form>
+  </dialog>
+
+
+  <script type="module">
+    let initializeApp, getApps, deleteApp;
+    let getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged;
+    let getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, enableIndexedDbPersistence;
+
+    async function loadFirebaseModules() {
+      if (initializeApp) return;
+      const [appModule, authModule, firestoreModule] = await Promise.all([
+        import('https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js'),
+        import('https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js')
+      ]);
+      ({ initializeApp, getApps, deleteApp } = appModule);
+      ({ getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } = authModule);
+      ({ getFirestore, doc, setDoc, getDoc, onSnapshot, serverTimestamp, enableIndexedDbPersistence } = firestoreModule);
+    }
+
+    const STORAGE_KEY = 'timeline-plan-done-v11';
+    const V10_STORAGE_KEY = 'timeline-plan-done-v10';
+    const V9_STORAGE_KEY = 'timeline-plan-done-v9';
+    const V8_STORAGE_KEY = 'timeline-plan-done-v8';
+    const V7_STORAGE_KEY = 'timeline-plan-done-v7';
+    const V6_STORAGE_KEY = 'timeline-plan-done-v6';
+    const V5_STORAGE_KEY = 'timeline-plan-done-v5';
+    const V4_STORAGE_KEY = 'timeline-plan-done-v4';
+    const V3_STORAGE_KEY = 'timeline-plan-done-v3';
+    const V2_STORAGE_KEY = 'timeline-plan-done-v2';
+    const LEGACY_STORAGE_KEY = 'timeline-todo-done-v1';
+    const FIREBASE_CONFIG_KEY = 'timeline-plan-done-firebase-config-v1';
+    const DEVICE_ID_KEY = 'timeline-plan-done-device-id-v1';
+    const SELECTED_DATE_KEY = 'timeline-plan-done-selected-date-v1';
+
+    const $ = (selector) => document.querySelector(selector);
+    const timeline = $('#timeline');
+    const taskForm = $('#taskForm');
+    const doneForm = $('#doneForm');
+    const titleInput = $('#titleInput');
+    const timeInput = $('#timeInput');
+    const durationInput = $('#durationInput');
+    const categoryInput = $('#categoryInput');
+    const doneTitleInput = $('#doneTitleInput');
+    const doneStartInput = $('#doneStartInput');
+    const doneEndInput = $('#doneEndInput');
+    const doneDurationPreview = $('#doneDurationPreview');
+    const directTimerValue = $('#directTimerValue');
+    const directTimerNote = $('#directTimerNote');
+    const directTimerActions = $('#directTimerActions');
+    const doneCategoryInput = $('#doneCategoryInput');
+    const editDialog = $('#editDialog');
+    const syncDialog = $('#syncDialog');
+    const dateInput = $('#dateInput');
+    const selectedDateTitle = $('#selectedDateTitle');
+
+    const DEVICE_ID = getOrCreateDeviceId();
+    let selectedDateKey = localStorage.getItem(SELECTED_DATE_KEY) || getLocalDateKey(new Date());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDateKey)) selectedDateKey = getLocalDateKey(new Date());
+
+    let state = loadState();
+    let tasks = state.tasks;
+    let directDoneLogs = state.directDoneLogs;
+    let directTimer = state.directTimer || normalizeTimer({});
+    let updatedAtClient = state.updatedAtClient || new Date().toISOString();
+
+    let firebaseApp = null;
+    let auth = null;
+    let db = null;
+    let currentUser = null;
+    let unsubscribeCloud = null;
+    let cloudPushTimer = null;
+    let applyingRemote = false;
+    let lastCloudWriteAt = '';
+    let deferredInstallPrompt = null;
+    let ticker = null;
+
+    function makeId() {
+      return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function getOrCreateDeviceId() {
+      let id = localStorage.getItem(DEVICE_ID_KEY);
+      if (!id) {
+        id = makeId();
+        localStorage.setItem(DEVICE_ID_KEY, id);
+      }
+      return id;
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return normalizeState(JSON.parse(raw));
+
+        for (const key of [V10_STORAGE_KEY, V9_STORAGE_KEY, V8_STORAGE_KEY, V7_STORAGE_KEY, V6_STORAGE_KEY, V5_STORAGE_KEY, V4_STORAGE_KEY, V3_STORAGE_KEY, V2_STORAGE_KEY, LEGACY_STORAGE_KEY]) {
+          const older = localStorage.getItem(key);
+          if (older) {
+            const migrated = normalizeState(JSON.parse(older));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 11, ...migrated }));
+            return migrated;
+          }
+        }
+        return seedState();
+      } catch {
+        return seedState();
+      }
+    }
+
+    function normalizeState(input) {
+      if (Array.isArray(input)) return { tasks: normalizeTasks(input), directDoneLogs: [], directTimer: normalizeTimer({}), updatedAtClient: new Date().toISOString() };
+
+      const tasksSource = Array.isArray(input?.tasks) ? input.tasks : [];
+      const directSource = Array.isArray(input?.directDoneLogs)
+        ? input.directDoneLogs
+        : (Array.isArray(input?.standaloneDoneLogs) ? input.standaloneDoneLogs : []);
+
+      const normalized = {
+        tasks: normalizeTasks(tasksSource),
+        directDoneLogs: directSource.map(normalizeDirectDoneLog),
+        directTimer: normalizeTimer(input?.directTimer),
+        updatedAtClient: input?.updatedAtClient || input?.updatedAt || new Date().toISOString()
+      };
+
+      return normalized;
+    }
+
+    function normalizeTasks(input) {
+      if (!Array.isArray(input)) return [];
+      return input.map(task => {
+        const plannedAt = task.plannedAt || '';
+        const durationMinutes = clampDuration(task.durationMinutes || task.estimatedMinutes || 30, 5, 720);
+        const timer = normalizeTimer(task.timer);
+        return {
+          id: task.id || makeId(),
+          title: task.title || '未命名任务',
+          category: task.category || '其他',
+          plannedAt,
+          durationMinutes,
+          todayStatus: task.todayStatus || (task.carryToday ? 'continue' : 'pending'),
+          createdAt: task.createdAt || new Date().toISOString(),
+          timer,
+          interruptions: Array.isArray(task.interruptions) ? task.interruptions.map(normalizeInterruption) : [],
+          doneLogs: Array.isArray(task.doneLogs)
+            ? task.doneLogs.map(log => normalizePlannedDoneLog(log, plannedAt, durationMinutes))
+            : (task.completedAt ? [normalizePlannedDoneLog({ completedAt: task.completedAt }, plannedAt, durationMinutes)] : [])
+        };
+      });
+    }
+
+    function normalizeTimer(timer) {
+      const status = ['idle', 'running', 'paused'].includes(timer?.status) ? timer.status : 'idle';
+      const startedAt = status === 'running' ? (timer?.startedAt || new Date().toISOString()) : (timer?.startedAt || '');
+      return {
+        status,
+        startedAt,
+        sessionStartedAt: timer?.sessionStartedAt || startedAt || '',
+        pausedAt: timer?.pausedAt || '',
+        elapsedSeconds: Math.max(0, Number(timer?.elapsedSeconds || 0))
+      };
+    }
+
+    function normalizeInterruption(item) {
+      return {
+        id: item.id || makeId(),
+        at: item.at || new Date().toISOString(),
+        elapsedSeconds: Math.max(0, Number(item.elapsedSeconds || 0)),
+        note: item.note || ''
+      };
+    }
+
+    function normalizePlannedDoneLog(log, plannedAt = '', durationMinutes = 30) {
+      const completedAt = log.completedAt || new Date().toISOString();
+      const durationSeconds = Math.max(0, Number(log.durationSeconds || log.elapsedSeconds || (durationMinutes * 60) || 0));
+      const status = ['done', 'partial'].includes(log.status || log.type) ? (log.status || log.type) : 'done';
+      return {
+        id: log.id || makeId(),
+        completedAt,
+        actualStartedAt: log.actualStartedAt || inferStartFromEnd(completedAt, durationSeconds) || plannedAt || completedAt,
+        durationSeconds,
+        status,
+        note: log.note || ''
+      };
+    }
+
+    function normalizeDirectDoneLog(log) {
+      const completedAt = log.completedAt || new Date().toISOString();
+      const rawSeconds = Number(log.durationSeconds || 0);
+      const durationMinutes = clampDuration(log.durationMinutes || Math.round(rawSeconds / 60) || 15, 0, 1440);
+      const durationSeconds = Math.max(0, Math.round(rawSeconds || durationMinutes * 60));
+      return {
+        id: log.id || makeId(),
+        title: log.title || '未命名完成事项',
+        category: log.category || '其他',
+        completedAt,
+        actualStartedAt: log.actualStartedAt || inferStartFromEnd(completedAt, durationSeconds) || completedAt,
+        durationMinutes,
+        durationSeconds,
+        createdAt: log.createdAt || new Date().toISOString(),
+        note: log.note || ''
+      };
+    }
+
+    function seedState() {
+      const now = new Date();
+      const sample1 = new Date(now.getTime() + 30 * 60 * 1000);
+      const sample2 = new Date(now.getTime() - 90 * 60 * 1000);
+      const sample2Done = new Date(now.getTime() - 35 * 60 * 1000);
+      return {
+        tasks: [
+          {
+            id: makeId(),
+            title: '添加第一个真正的计划任务',
+            category: '生活',
+            plannedAt: toDateTimeLocalValue(sample1),
+            durationMinutes: 30,
+            todayStatus: 'pending',
+            createdAt: new Date().toISOString(),
+            timer: { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 },
+            interruptions: [],
+            doneLogs: []
+          },
+          {
+            id: makeId(),
+            title: '试一下 time block + Done 记录',
+            category: '其他',
+            plannedAt: toDateTimeLocalValue(sample2),
+            durationMinutes: 45,
+            todayStatus: 'done',
+            createdAt: new Date().toISOString(),
+            timer: { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 },
+            interruptions: [],
+            doneLogs: [{
+              id: makeId(),
+              completedAt: toDateTimeLocalValue(sample2Done),
+              actualStartedAt: toDateTimeLocalValue(new Date(sample2Done.getTime() - 40 * 60 * 1000)),
+              durationSeconds: 40 * 60,
+              note: ''
+            }]
+          }
+        ],
+        directDoneLogs: [
+          {
+            id: makeId(),
+            title: '示例：直接记录一个临时完成事项',
+            category: '生活',
+            completedAt: toDateTimeLocalValue(new Date(now.getTime() - 15 * 60 * 1000)),
+            actualStartedAt: toDateTimeLocalValue(new Date(now.getTime() - 30 * 60 * 1000)),
+            durationMinutes: 15,
+            durationSeconds: 15 * 60,
+            createdAt: new Date().toISOString(),
+            note: ''
+          }
+        ],
+        directTimer: { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 },
+        updatedAtClient: new Date().toISOString()
+      };
+    }
+
+    function getStatePayload() {
+      return {
+        version: 11,
+        updatedAtClient,
+        deviceId: DEVICE_ID,
+        tasks,
+        directDoneLogs,
+        directTimer
+      };
+    }
+
+    function saveState({ markUpdated = true, pushCloud = true } = {}) {
+      if (markUpdated) updatedAtClient = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getStatePayload()));
+      if (pushCloud && !applyingRemote) scheduleCloudPush();
+    }
+
+    function clampDuration(value, min, max) {
+      const n = Number(value);
+      if (Number.isNaN(n)) return min;
+      return Math.min(max, Math.max(min, Math.round(n)));
+    }
+
+    function toDateTimeLocalValue(date) {
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function getLocalDateKey(value) {
+      const d = value instanceof Date ? value : toDate(value);
+      if (!d) return '';
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+
+    function isOnSelectedDate(value) {
+      return getLocalDateKey(value) === selectedDateKey;
+    }
+
+    function getSelectedDateObject() {
+      return toDate(`${selectedDateKey}T00:00`) || new Date();
+    }
+
+    function getSelectedDateTimeLocalValue(hour = null, minute = null) {
+      const now = new Date();
+      const useCurrentClock = hour === null || minute === null;
+      const h = useCurrentClock ? now.getHours() : hour;
+      const m = useCurrentClock ? now.getMinutes() : minute;
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${selectedDateKey}T${pad(h)}:${pad(m)}`;
+    }
+
+    function setSelectedDate(nextDateKey) {
+      if (!nextDateKey) return;
+      selectedDateKey = nextDateKey;
+      localStorage.setItem(SELECTED_DATE_KEY, selectedDateKey);
+      updateSelectedDateUi();
+      setPlanDefaultTime();
+      setDirectDoneDefaultTimes();
+      render({ markUpdated: false, pushCloud: false });
+    }
+
+    function shiftSelectedDate(days) {
+      const d = getSelectedDateObject();
+      d.setDate(d.getDate() + days);
+      setSelectedDate(getLocalDateKey(d));
+    }
+
+    function updateSelectedDateUi() {
+      if (dateInput) dateInput.value = selectedDateKey;
+      if (!selectedDateTitle) return;
+      const d = getSelectedDateObject();
+      const todayKey = getLocalDateKey(new Date());
+      const label = selectedDateKey === todayKey ? '今天' : d.toLocaleDateString('zh-CN', { weekday: 'long' });
+      selectedDateTitle.textContent = `${d.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })} · ${label}`;
+    }
+
+    function setPlanDefaultTime() {
+      if (!timeInput) return;
+      if (!timeInput.value || getLocalDateKey(timeInput.value) !== selectedDateKey) {
+        timeInput.value = selectedDateKey === getLocalDateKey(new Date()) ? getSelectedDateTimeLocalValue() : getSelectedDateTimeLocalValue(9, 0);
+      }
+    }
+
+    function toDate(value) {
+      if (!value) return null;
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    function inferStartFromEnd(endValue, durationSeconds) {
+      const end = toDate(endValue);
+      if (!end || !durationSeconds) return '';
+      return toDateTimeLocalValue(new Date(end.getTime() - durationSeconds * 1000));
+    }
+
+    function addMinutes(value, minutes) {
+      const d = toDate(value);
+      if (!d) return '';
+      return toDateTimeLocalValue(new Date(d.getTime() + minutes * 60 * 1000));
+    }
+
+    function getDurationMinutesBetween(startValue, endValue) {
+      const start = toDate(startValue);
+      const end = toDate(endValue);
+      if (!start || !end) return 0;
+      return Math.round((end.getTime() - start.getTime()) / 60000);
+    }
+
+    function updateDoneDurationPreview() {
+      if (!doneDurationPreview) return;
+      if (!doneStartInput.value || !doneEndInput.value) {
+        doneDurationPreview.textContent = '自动计算用时：请选择开始和结束时间';
+        return;
+      }
+      const minutes = getDurationMinutesBetween(doneStartInput.value, doneEndInput.value);
+      if (minutes < 0) {
+        doneDurationPreview.textContent = '自动计算用时：结束时间早于开始时间';
+        return;
+      }
+      doneDurationPreview.textContent = `自动计算用时：${formatDurationMinutes(minutes)}`;
+    }
+
+    function setDirectDoneDefaultTimes() {
+      if (directTimer?.status === 'running' || directTimer?.status === 'paused') return;
+      const todayKey = getLocalDateKey(new Date());
+      if (selectedDateKey === todayKey) {
+        const end = new Date();
+        const start = new Date(end.getTime() - 15 * 60 * 1000);
+        doneStartInput.value = toDateTimeLocalValue(start);
+        doneEndInput.value = toDateTimeLocalValue(end);
+      } else {
+        const start = toDate(`${selectedDateKey}T09:00`) || new Date();
+        const end = new Date(start.getTime() + 15 * 60 * 1000);
+        doneStartInput.value = toDateTimeLocalValue(start);
+        doneEndInput.value = toDateTimeLocalValue(end);
+      }
+      updateDoneDurationPreview();
+    }
+
+    function formatDateTime(value) {
+      const d = toDate(value);
+      if (!d) return '未设时间';
+      return d.toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatTime(value) {
+      const d = toDate(value);
+      if (!d) return '--:--';
+      return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function dateSortValue(value) {
+      const d = toDate(value);
+      return d ? d.getTime() : 0;
+    }
+
+    function formatDurationMinutes(minutes) {
+      const n = Math.max(0, Math.round(Number(minutes || 0)));
+      const h = Math.floor(n / 60);
+      const m = n % 60;
+      if (!h) return `${m}m`;
+      if (!m) return `${h}h`;
+      return `${h}h ${m}m`;
+    }
+
+    function formatDurationSeconds(seconds) {
+      const total = Math.max(0, Math.round(Number(seconds || 0)));
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      if (h) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      return `${m}:${String(s).padStart(2, '0')}`;
+    }
+
+    function formatTotalMinutes(totalMinutes) {
+      const n = Math.max(0, Math.round(totalMinutes));
+      if (n < 60) return `${n}m`;
+      const h = Math.floor(n / 60);
+      const m = n % 60;
+      return m ? `${h}h ${m}m` : `${h}h`;
+    }
+
+    function getTaskElapsedSeconds(task) {
+      const timer = task.timer || { status: 'idle', startedAt: '', elapsedSeconds: 0 };
+      let elapsed = Math.max(0, Number(timer.elapsedSeconds || 0));
+      if (timer.status === 'running' && timer.startedAt) {
+        const start = toDate(timer.startedAt);
+        if (start) elapsed += Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000));
+      }
+      return elapsed;
+    }
+
+    function getTaskDoneLogs(task) {
+      return (task.doneLogs || []).filter(log => (log.status || 'done') === 'done');
+    }
+
+    function getTaskPartialLogs(task) {
+      return (task.doneLogs || []).filter(log => log.status === 'partial');
+    }
+
+    function getTaskStatus(task) {
+      const doneCount = getTaskDoneLogs(task).length;
+      const partialCount = getTaskPartialLogs(task).length;
+      if (task.timer?.status === 'running') return { className: 'active', text: '计时中' };
+      if (task.timer?.status === 'paused') return { className: 'continue', text: '已暂停' };
+      if (task.todayStatus === 'continue') return { className: 'continue', text: partialCount ? `今天继续 · 已记录 ${partialCount} 段` : '今天继续' };
+      if (doneCount) return { className: 'done', text: `已完成 ${doneCount} 次` };
+      if (partialCount) return { className: 'continue', text: `已记录 ${partialCount} 段` };
+      return { className: 'pending', text: '未完成' };
+    }
+
+    function getBlockHeightByMinutes(minutes) {
+      const min = Math.max(0, Number(minutes || 0));
+      return Math.min(230, Math.max(82, 66 + min * 1.35));
+    }
+
+    function getDelayLabel(task, log) {
+      if (!task.plannedAt || !log.completedAt) return '';
+      const plannedEndAt = addMinutes(task.plannedAt, task.durationMinutes);
+      const planned = dateSortValue(plannedEndAt);
+      const actual = dateSortValue(log.completedAt);
+      if (!planned || !actual) return '';
+      const diffMinutes = Math.round((actual - planned) / 60000);
+      if (Math.abs(diffMinutes) < 1) return '准时';
+      const abs = Math.abs(diffMinutes);
+      const hours = Math.floor(abs / 60);
+      const minutes = abs % 60;
+      const parts = [];
+      if (hours) parts.push(`${hours}小时`);
+      if (minutes || !hours) parts.push(`${minutes}分钟`);
+      return diffMinutes > 0 ? `晚 ${parts.join('')}` : `早 ${parts.join('')}`;
+    }
+
+    function getActualLogStart(log) {
+      const durationSeconds = Number(log.durationSeconds || 0) || Number(log.durationMinutes || 0) * 60;
+      return log.actualStartedAt || inferStartFromEnd(log.completedAt, durationSeconds) || log.completedAt || log.createdAt;
+    }
+
+    function getActualLogEnd(log) {
+      return log.completedAt || log.actualEndedAt || log.createdAt || getActualLogStart(log);
+    }
+
+    function getActualLogDurationSeconds(log) {
+      if (Number.isFinite(Number(log.durationSeconds)) && Number(log.durationSeconds) >= 0) return Number(log.durationSeconds);
+      if (Number.isFinite(Number(log.durationMinutes)) && Number(log.durationMinutes) >= 0) return Number(log.durationMinutes) * 60;
+      const start = toDate(getActualLogStart(log));
+      const end = toDate(getActualLogEnd(log));
+      if (!start || !end) return 0;
+      return Math.max(0, Math.round((end.getTime() - start.getTime()) / 1000));
+    }
+
+    function buildTimelineRows() {
+      const planRows = tasks
+        .filter(task => isOnSelectedDate(task.plannedAt || task.createdAt))
+        .map(task => ({
+          type: 'plan',
+          id: `plan-${task.id}`,
+          time: task.plannedAt || task.createdAt,
+          task
+        }));
+
+      const plannedActualRows = tasks.flatMap(task => (task.doneLogs || []).map(log => ({
+        type: 'actual',
+        id: `actual-${task.id}-${log.id}`,
+        time: getActualLogStart(log),
+        task,
+        log
+      }))).filter(row => isOnSelectedDate(row.time));
+
+      const directRows = directDoneLogs
+        .map(log => ({
+          type: 'direct',
+          id: `direct-${log.id}`,
+          time: getActualLogStart(log),
+          log
+        }))
+        .filter(row => isOnSelectedDate(row.time));
+
+      const priority = { plan: 0, actual: 1, direct: 1 };
+      return [...planRows, ...plannedActualRows, ...directRows].sort((a, b) => {
+        const timeDiff = dateSortValue(a.time) - dateSortValue(b.time);
+        if (timeDiff !== 0) return timeDiff;
+        return (priority[a.type] ?? 9) - (priority[b.type] ?? 9) || String(a.id).localeCompare(String(b.id));
+      });
+    }
+
+    function render({ markUpdated = false, pushCloud = false } = {}) {
+      saveState({ markUpdated, pushCloud });
+      const rows = buildTimelineRows();
+      timeline.innerHTML = '';
+
+      const dailyPlanTasks = rows.filter(row => row.type === 'plan').map(row => row.task);
+      const dailyActualRows = rows.filter(row => row.type === 'actual');
+      const dailyDirectRows = rows.filter(row => row.type === 'direct');
+      const planCount = dailyPlanTasks.length;
+      const plannedActualCount = dailyActualRows.length;
+      const doneRecordCount = plannedActualCount + dailyDirectRows.length;
+      const directCount = dailyDirectRows.length;
+      const completedPlanCount = dailyPlanTasks.filter(task => getTaskDoneLogs(task).length > 0 || task.todayStatus === 'done').length;
+      const continueCount = dailyPlanTasks.filter(task => task.todayStatus === 'continue' || task.timer?.status === 'paused' || task.timer?.status === 'running').length;
+      const plannedSeconds = dailyActualRows.reduce((sum, row) => sum + getActualLogDurationSeconds(row.log), 0);
+      const directSeconds = dailyDirectRows.reduce((sum, row) => sum + getActualLogDurationSeconds(row.log), 0);
+      const actualMinutes = Math.round((plannedSeconds + directSeconds) / 60);
+      const rate = planCount ? Math.round((completedPlanCount / planCount) * 100) : 0;
+
+      $('#planCount').textContent = planCount;
+      $('#doneCount').textContent = doneRecordCount;
+      $('#directDoneCount').textContent = directCount;
+      $('#continueCount').textContent = continueCount;
+      $('#actualTimeCount').textContent = formatTotalMinutes(actualMinutes);
+      $('#completionRate').textContent = `${rate}%`;
+      renderDirectTimerControls();
+
+      if (rows.length === 0) {
+        timeline.innerHTML = '<div class="empty">这一天还没有计划或 Done。可以新增计划、直接记录 Done，或切换到其他日期查看。</div>';
+        return;
+      }
+
+      rows.forEach(rowData => {
+        const row = document.createElement('article');
+        row.className = 'timeline-row';
+
+        const left = document.createElement('div');
+        left.className = 'left-col';
+        const node = document.createElement('div');
+        node.className = 'time-node';
+        const right = document.createElement('div');
+        right.className = 'right-col';
+
+        if (rowData.type === 'plan') {
+          const task = rowData.task;
+          left.appendChild(createPlanCard(task));
+          const status = getTaskStatus(task);
+          node.innerHTML = createTimeNodeHtml({
+            dotClass: status.className,
+            start: task.plannedAt,
+            end: addMinutes(task.plannedAt, task.durationMinutes),
+            durationLabel: formatDurationMinutes(task.durationMinutes)
+          });
+          right.innerHTML = task.doneLogs.length
+            ? `<div class="placeholder">已生成 ${task.doneLogs.length} 个 Actual time block；它们会按实际开始时间显示在右侧时间轴中。</div>`
+            : '<div class="placeholder">还没有 Actual time block</div>';
+        }
+
+        if (rowData.type === 'actual') {
+          const task = rowData.task;
+          const log = rowData.log;
+          const start = getActualLogStart(log);
+          const end = getActualLogEnd(log);
+          const durationSeconds = getActualLogDurationSeconds(log);
+          const isPartial = log.status === 'partial';
+          left.appendChild(createPlanReferenceCard(task, log));
+          node.innerHTML = createTimeNodeHtml({
+            dotClass: isPartial ? 'continue' : 'done',
+            start,
+            end,
+            durationLabel: formatDurationSeconds(durationSeconds)
+          });
+          right.appendChild(createPlannedDoneCard(task, log));
+        }
+
+        if (rowData.type === 'direct') {
+          const log = rowData.log;
+          const start = getActualLogStart(log);
+          const end = getActualLogEnd(log);
+          const durationSeconds = getActualLogDurationSeconds(log);
+          left.innerHTML = '<div class="placeholder">无提前计划</div>';
+          node.innerHTML = createTimeNodeHtml({
+            dotClass: 'direct',
+            start,
+            end,
+            durationLabel: formatDurationSeconds(durationSeconds)
+          });
+          right.appendChild(createDirectDoneCard(log));
+        }
+
+        row.append(left, node, right);
+        timeline.appendChild(row);
+      });
+      ensureTicker();
+    }
+
+    function createTimeNodeHtml({ dotClass, start, end, durationLabel }) {
+      return `
+        <span class="dot ${dotClass}"></span>
+        <span class="time-range">
+          <strong>${formatTime(start)}</strong>
+          <span>↓</span>
+          <strong>${formatTime(end)}</strong>
+          <span>${durationLabel}</span>
+        </span>`;
+    }
+
+    function createPlanCard(task) {
+      const status = getTaskStatus(task);
+      const elapsed = getTaskElapsedSeconds(task);
+      const height = getBlockHeightByMinutes(task.durationMinutes);
+      const card = document.createElement('div');
+      card.className = `task-card block-card plan ${status.className}`;
+      card.style.setProperty('--block-height', `${height}px`);
+      card.innerHTML = `
+        <div>
+          <div class="task-title"><span>${escapeHtml(task.title)}</span></div>
+          <div class="task-meta">
+            <span class="pill">${escapeHtml(task.category || '其他')}</span>
+            <span class="pill">计划：${formatTime(task.plannedAt)} - ${formatTime(addMinutes(task.plannedAt, task.durationMinutes))}</span>
+            <span class="pill">预计：${formatDurationMinutes(task.durationMinutes)}</span>
+            <span class="pill ${status.className}">${status.text}</span>
+          </div>
+          <div class="timer-line">
+            <div>
+              <div class="timer-value" data-timer-for="${task.id}">${formatDurationSeconds(elapsed)}</div>
+              <div class="timer-note">计时器记录实际用时；完成或今天继续都会生成右侧 Actual block。</div>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          ${createTimerButtons(task)}
+          <button class="done" data-action="complete" data-id="${task.id}">记录完成</button>
+          <button class="warning" data-action="continue-today" data-id="${task.id}">今天继续</button>
+          <button class="secondary" data-action="edit" data-id="${task.id}">编辑</button>
+          <button class="danger" data-action="delete-task" data-id="${task.id}">删除</button>
+        </div>`;
+      return card;
+    }
+
+    function createPlanReferenceCard(task, log) {
+      const isPartial = log.status === 'partial';
+      const delay = isPartial ? '' : getDelayLabel(task, log);
+      const card = document.createElement('div');
+      card.className = 'task-card reference-card';
+      card.innerHTML = `
+        <div class="task-title"><span>${escapeHtml(task.title)}</span></div>
+        <div class="task-meta">
+          <span class="pill">对应计划</span>
+          <span class="pill">计划：${formatTime(task.plannedAt)} - ${formatTime(addMinutes(task.plannedAt, task.durationMinutes))}</span>
+          <span class="pill">预计：${formatDurationMinutes(task.durationMinutes)}</span>
+          ${delay ? `<span class="pill ${delay.startsWith('晚') ? 'late' : 'done'}">${delay}</span>` : ''}
+        </div>`;
+      return card;
+    }
+
+    function createTimerButtons(task) {
+      const status = task.timer?.status || 'idle';
+      if (status === 'running') return `<button class="timer" data-action="pause-timer" data-id="${task.id}">暂停</button>`;
+      if (status === 'paused') return `
+        <button class="timer" data-action="resume-timer" data-id="${task.id}">继续计时</button>
+        <button class="secondary" data-action="reset-timer" data-id="${task.id}">重置计时</button>`;
+      return `<button class="timer" data-action="start-timer" data-id="${task.id}">开始计时</button>`;
+    }
+
+    function createPlannedDoneCard(task, log) {
+      const isPartial = log.status === 'partial';
+      const delay = isPartial ? '' : getDelayLabel(task, log);
+      const durationSeconds = getActualLogDurationSeconds(log);
+      const minutes = Math.round(durationSeconds / 60);
+      const height = getBlockHeightByMinutes(minutes);
+      const start = getActualLogStart(log);
+      const card = document.createElement('div');
+      card.className = `task-card block-card actual ${isPartial ? 'partial' : ''}`;
+      card.style.setProperty('--block-height', `${height}px`);
+      card.innerHTML = `
+        <div>
+          <div class="task-title"><span>${escapeHtml(task.title)}</span></div>
+          <div class="task-meta">
+            <span class="pill ${isPartial ? 'partial' : 'done'}">${isPartial ? 'Partial / 今天继续' : 'Done / Completed'}</span>
+            <span class="pill ${isPartial ? 'partial' : 'done'}">Actual：${formatTime(start)} - ${formatTime(getActualLogEnd(log))}</span>
+            <span class="pill ${isPartial ? 'partial' : 'done'}">用时：${formatDurationSeconds(durationSeconds)}</span>
+            ${delay ? `<span class="pill ${delay.startsWith('晚') ? 'late' : 'done'}">${delay}</span>` : ''}
+            <span class="pill">计划：${formatTime(task.plannedAt)} - ${formatTime(addMinutes(task.plannedAt, task.durationMinutes))}</span>
+          </div>
+        </div>
+        <div class="actions"><button class="secondary" data-action="delete-log" data-id="${task.id}" data-log-id="${log.id}">删除 Actual</button></div>`;
+      return card;
+    }
+
+    function createDirectDoneCard(log) {
+      const durationSeconds = getActualLogDurationSeconds(log);
+      const height = getBlockHeightByMinutes(Math.round(durationSeconds / 60));
+      const start = getActualLogStart(log);
+      const card = document.createElement('div');
+      card.className = 'task-card block-card direct';
+      card.style.setProperty('--block-height', `${height}px`);
+      card.innerHTML = `
+        <div>
+          <div class="task-title"><span>${escapeHtml(log.title)}</span></div>
+          <div class="task-meta">
+            <span class="pill direct">Direct Done</span>
+            <span class="pill done">Actual：${formatTime(start)} - ${formatTime(getActualLogEnd(log))}</span>
+            <span class="pill done">用时：${formatDurationSeconds(durationSeconds)}</span>
+            <span class="pill">${escapeHtml(log.category || '其他')}</span>
+          </div>
+        </div>
+        <div class="actions"><button class="secondary" data-action="delete-direct" data-direct-id="${log.id}">删除 Direct Done</button></div>`;
+      return card;
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+    }
+
+    function getDirectTimerElapsedSeconds() {
+      const timer = directTimer || { status: 'idle', startedAt: '', elapsedSeconds: 0 };
+      let elapsed = Math.max(0, Number(timer.elapsedSeconds || 0));
+      if (timer.status === 'running' && timer.startedAt) {
+        const start = toDate(timer.startedAt);
+        if (start) elapsed += Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000));
+      }
+      return elapsed;
+    }
+
+    function renderDirectTimerControls() {
+      if (!directTimerValue || !directTimerActions || !directTimerNote) return;
+      const status = directTimer?.status || 'idle';
+      const elapsed = getDirectTimerElapsedSeconds();
+      directTimerValue.textContent = formatDurationSeconds(elapsed);
+      if (status === 'running') {
+        directTimerNote.textContent = 'Direct Done 正在计时。保存时会用本次计时生成右侧 Actual time block。';
+        directTimerActions.innerHTML = `
+          <button class="timer" type="button" data-direct-timer-action="pause">暂停</button>
+          <button class="done" type="button" data-direct-timer-action="save">保存为 Direct Done</button>
+          <button class="secondary" type="button" data-direct-timer-action="reset">重置</button>`;
+        return;
+      }
+      if (status === 'paused') {
+        directTimerNote.textContent = 'Direct Done 计时已暂停。可以继续计时，或直接保存为 Done。';
+        directTimerActions.innerHTML = `
+          <button class="timer" type="button" data-direct-timer-action="resume">继续计时</button>
+          <button class="done" type="button" data-direct-timer-action="save">保存为 Direct Done</button>
+          <button class="secondary" type="button" data-direct-timer-action="reset">重置</button>`;
+        return;
+      }
+      directTimerNote.textContent = 'Direct Done 计时器：适合临时开始做、结束后再保存为 Done。';
+      directTimerActions.innerHTML = '<button class="timer" type="button" data-direct-timer-action="start">开始 Direct Done 计时</button>';
+    }
+
+    function pauseDirectTimerForOtherTimer() {
+      if (directTimer?.status !== 'running') return;
+      const now = new Date().toISOString();
+      directTimer.elapsedSeconds = getDirectTimerElapsedSeconds();
+      directTimer.status = 'paused';
+      directTimer.pausedAt = now;
+      directTimer.startedAt = '';
+    }
+
+    function startDirectTimer() {
+      pauseRunningTasks('');
+      directTimer = directTimer || { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 };
+      if (directTimer.status !== 'running') {
+        const now = new Date().toISOString();
+        directTimer.status = 'running';
+        directTimer.startedAt = now;
+        directTimer.sessionStartedAt = directTimer.sessionStartedAt || now;
+        directTimer.pausedAt = '';
+      }
+    }
+
+    function pauseDirectTimer() {
+      if (directTimer?.status !== 'running') return;
+      const now = new Date().toISOString();
+      directTimer.elapsedSeconds = getDirectTimerElapsedSeconds();
+      directTimer.status = 'paused';
+      directTimer.pausedAt = now;
+      directTimer.startedAt = '';
+    }
+
+    function resumeDirectTimer() {
+      pauseRunningTasks('');
+      directTimer = directTimer || { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 };
+      const now = new Date().toISOString();
+      directTimer.status = 'running';
+      directTimer.startedAt = now;
+      directTimer.sessionStartedAt = directTimer.sessionStartedAt || now;
+      directTimer.pausedAt = '';
+    }
+
+    function resetDirectTimer() {
+      directTimer = { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 };
+    }
+
+    function saveDirectDoneFromTimer() {
+      const title = doneTitleInput.value.trim();
+      if (!title) {
+        alert('请先填写 Direct Done 的完成事项。');
+        return false;
+      }
+      const durationSeconds = getDirectTimerElapsedSeconds();
+      if (durationSeconds <= 0) {
+        alert('Direct Done 计时器还没有记录到时间。');
+        return false;
+      }
+      const completedAt = directTimer.status === 'paused'
+        ? (directTimer.pausedAt || new Date().toISOString())
+        : new Date().toISOString();
+      const actualStartedAt = directTimer.sessionStartedAt || directTimer.startedAt || inferStartFromEnd(completedAt, durationSeconds) || completedAt;
+      directDoneLogs.push({
+        id: makeId(),
+        title,
+        category: doneCategoryInput.value,
+        completedAt,
+        actualStartedAt,
+        durationMinutes: Math.round(durationSeconds / 60),
+        durationSeconds,
+        createdAt: new Date().toISOString(),
+        note: 'Direct Done timer'
+      });
+      const keepCategory = doneCategoryInput.value;
+      doneForm.reset();
+      doneCategoryInput.value = keepCategory;
+      doneStartInput.value = actualStartedAt;
+      doneEndInput.value = completedAt;
+      updateDoneDurationPreview();
+      resetDirectTimer();
+      return true;
+    }
+
+    function createTimerActualLog(task, status = 'partial', note = '') {
+      const timer = task.timer || { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 };
+      const durationSeconds = getTaskElapsedSeconds(task);
+      if (durationSeconds <= 0) return false;
+
+      const completedAt = timer.status === 'paused'
+        ? (timer.pausedAt || new Date().toISOString())
+        : new Date().toISOString();
+      const actualStartedAt = timer.sessionStartedAt || timer.startedAt || inferStartFromEnd(completedAt, durationSeconds) || task.plannedAt || completedAt;
+
+      task.doneLogs.push({
+        id: makeId(),
+        completedAt,
+        actualStartedAt,
+        durationSeconds,
+        status,
+        note
+      });
+      return true;
+    }
+
+    function clearTimer(task) {
+      task.timer = { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 };
+    }
+
+    function pauseRunningTasks(exceptId = '') {
+      tasks.forEach(task => {
+        if (task.id !== exceptId && task.timer?.status === 'running') {
+          const now = new Date().toISOString();
+          task.timer.elapsedSeconds = getTaskElapsedSeconds(task);
+          task.timer.status = 'paused';
+          task.timer.pausedAt = now;
+          task.timer.startedAt = '';
+          task.todayStatus = 'continue';
+          task.interruptions.push({ id: makeId(), at: now, elapsedSeconds: task.timer.elapsedSeconds, note: '自动暂停：开始了另一个计时器' });
+        }
+      });
+    }
+
+    function startTimer(task) {
+      pauseDirectTimerForOtherTimer();
+      pauseRunningTasks(task.id);
+      task.timer = task.timer || { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 };
+      if (task.timer.status !== 'running') {
+        const now = new Date().toISOString();
+        task.timer.status = 'running';
+        task.timer.startedAt = now;
+        task.timer.sessionStartedAt = task.timer.sessionStartedAt || now;
+        task.timer.pausedAt = '';
+        task.todayStatus = 'pending';
+      }
+    }
+
+    function pauseTimer(task) {
+      if (task.timer?.status !== 'running') return;
+      const now = new Date().toISOString();
+      task.timer.elapsedSeconds = getTaskElapsedSeconds(task);
+      task.timer.status = 'paused';
+      task.timer.pausedAt = now;
+      task.timer.startedAt = '';
+      task.todayStatus = 'continue';
+      task.interruptions.push({ id: makeId(), at: now, elapsedSeconds: task.timer.elapsedSeconds, note: '手动暂停' });
+    }
+
+    function resumeTimer(task) {
+      pauseDirectTimerForOtherTimer();
+      pauseRunningTasks(task.id);
+      task.timer = task.timer || { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 };
+      const now = new Date().toISOString();
+      task.timer.status = 'running';
+      task.timer.startedAt = now;
+      task.timer.sessionStartedAt = task.timer.sessionStartedAt || now;
+      task.timer.pausedAt = '';
+      task.todayStatus = 'pending';
+    }
+
+    function resetTimer(task) {
+      clearTimer(task);
+    }
+
+    function completeTask(task) {
+      const hasTimerTime = getTaskElapsedSeconds(task) > 0;
+      if (hasTimerTime) {
+        createTimerActualLog(task, 'done', '记录完成');
+      } else {
+        const durationSeconds = Math.max(0, Number(task.durationMinutes || 0) * 60);
+        const completedAt = new Date().toISOString();
+        const actualStartedAt = inferStartFromEnd(completedAt, durationSeconds) || task.plannedAt || completedAt;
+        task.doneLogs.push({
+          id: makeId(),
+          completedAt,
+          actualStartedAt,
+          durationSeconds,
+          status: 'done',
+          note: '记录完成'
+        });
+      }
+      clearTimer(task);
+      task.todayStatus = 'done';
+    }
+
+    function markContinueToday(task) {
+      const hadTimerTime = getTaskElapsedSeconds(task) > 0;
+      if (task.timer?.status === 'running') pauseTimer(task);
+      if (hadTimerTime) {
+        const recorded = createTimerActualLog(task, 'partial', '今天继续：本次已做时间段');
+        if (recorded) clearTimer(task);
+      }
+      task.todayStatus = 'continue';
+      task.interruptions.push({ id: makeId(), at: new Date().toISOString(), elapsedSeconds: hadTimerTime ? 0 : getTaskElapsedSeconds(task), note: hadTimerTime ? '生成部分 Actual block，今天继续' : '标记为今天继续' });
+    }
+
+    taskForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const title = titleInput.value.trim();
+      if (!title) return;
+      tasks.push({
+        id: makeId(),
+        title,
+        category: categoryInput.value,
+        plannedAt: timeInput.value || getSelectedDateTimeLocalValue(),
+        durationMinutes: clampDuration(durationInput.value || 30, 5, 720),
+        todayStatus: 'pending',
+        createdAt: new Date().toISOString(),
+        timer: { status: 'idle', startedAt: '', sessionStartedAt: '', pausedAt: '', elapsedSeconds: 0 },
+        interruptions: [],
+        doneLogs: []
+      });
+      const keepCategory = categoryInput.value;
+      taskForm.reset();
+      categoryInput.value = keepCategory;
+      durationInput.value = 30;
+      setPlanDefaultTime();
+      render({ markUpdated: true, pushCloud: true });
+    });
+
+    doneForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const title = doneTitleInput.value.trim();
+      if (!title) return;
+      const actualStartedAt = doneStartInput.value;
+      const completedAt = doneEndInput.value;
+      if (!actualStartedAt || !completedAt) {
+        alert('请选择 Direct Done 的开始时间和结束时间。');
+        return;
+      }
+      const durationMinutes = getDurationMinutesBetween(actualStartedAt, completedAt);
+      if (durationMinutes < 0) {
+        alert('结束时间不能早于开始时间。');
+        return;
+      }
+      directDoneLogs.push({
+        id: makeId(),
+        title,
+        category: doneCategoryInput.value,
+        completedAt,
+        actualStartedAt,
+        durationMinutes: clampDuration(durationMinutes, 0, 1440),
+        durationSeconds: Math.max(0, durationMinutes * 60),
+        createdAt: new Date().toISOString(),
+        note: ''
+      });
+      const keepCategory = doneCategoryInput.value;
+      doneForm.reset();
+      doneCategoryInput.value = keepCategory;
+      setDirectDoneDefaultTimes();
+      render({ markUpdated: true, pushCloud: true });
+    });
+
+    directTimerActions.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-direct-timer-action]');
+      if (!button) return;
+      const action = button.dataset.directTimerAction;
+      if (action === 'start') startDirectTimer();
+      if (action === 'pause') pauseDirectTimer();
+      if (action === 'resume') resumeDirectTimer();
+      if (action === 'reset') {
+        if (!confirm('确定重置 Direct Done 当前计时吗？')) return;
+        resetDirectTimer();
+      }
+      if (action === 'save') {
+        const saved = saveDirectDoneFromTimer();
+        if (!saved) {
+          renderDirectTimerControls();
+          return;
+        }
+      }
+      render({ markUpdated: true, pushCloud: true });
+    });
+
+    timeline.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const action = button.dataset.action;
+
+      if (action === 'delete-direct') {
+        if (confirm('确定删除这条 Direct Done 记录吗？')) {
+          directDoneLogs = directDoneLogs.filter(log => log.id !== button.dataset.directId);
+          render({ markUpdated: true, pushCloud: true });
+        }
+        return;
+      }
+
+      const task = tasks.find(t => t.id === button.dataset.id);
+      if (!task) return;
+
+      if (action === 'start-timer') startTimer(task);
+      if (action === 'pause-timer') pauseTimer(task);
+      if (action === 'resume-timer') resumeTimer(task);
+      if (action === 'reset-timer') {
+        if (!confirm('确定重置这个任务的当前计时吗？')) return;
+        resetTimer(task);
+      }
+      if (action === 'complete') completeTask(task);
+      if (action === 'continue-today') markContinueToday(task);
+      if (action === 'delete-log') task.doneLogs = task.doneLogs.filter(log => log.id !== button.dataset.logId);
+      if (action === 'delete-task') {
+        if (confirm('确定删除这个计划及其 Done 记录吗？')) tasks = tasks.filter(t => t.id !== task.id);
+        else return;
+      }
+      if (action === 'edit') {
+        openEditDialog(task);
+        return;
+      }
+      render({ markUpdated: true, pushCloud: true });
+    });
+
+    function openEditDialog(task) {
+      $('#editId').value = task.id;
+      $('#editTitle').value = task.title;
+      $('#editTime').value = task.plannedAt || '';
+      $('#editDuration').value = task.durationMinutes || 30;
+      $('#editCategory').value = task.category || '其他';
+      editDialog.showModal();
+    }
+
+    $('#cancelEdit').addEventListener('click', () => editDialog.close());
+
+    $('#editForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const id = $('#editId').value;
+      const task = tasks.find(t => t.id === id);
+      if (task) {
+        task.title = $('#editTitle').value.trim() || task.title;
+        task.plannedAt = $('#editTime').value;
+        task.durationMinutes = clampDuration($('#editDuration').value || 30, 5, 720);
+        task.category = $('#editCategory').value;
+      }
+      editDialog.close();
+      render({ markUpdated: true, pushCloud: true });
+    });
+
+    $('#clearBtn').addEventListener('click', () => {
+      if (confirm('确定清空所有计划、Done 记录和计时状态吗？')) {
+        tasks = [];
+        directDoneLogs = [];
+        resetDirectTimer();
+        render({ markUpdated: true, pushCloud: true });
+      }
+    });
+
+    $('#exportBtn').addEventListener('click', () => {
+      const exportPayload = { version: 11, exportedAt: new Date().toISOString(), updatedAtClient, tasks, directDoneLogs, directTimer };
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `timeline-plan-done-v11-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    $('#importBtn').addEventListener('click', () => $('#importFile').click());
+
+    $('#importFile').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const imported = JSON.parse(await file.text());
+        const normalized = normalizeState(imported);
+        tasks = normalized.tasks;
+        directDoneLogs = normalized.directDoneLogs;
+        directTimer = normalized.directTimer || normalizeTimer({});
+        render({ markUpdated: true, pushCloud: true });
+      } catch {
+        alert('导入失败：文件格式不正确。');
+      } finally {
+        event.target.value = '';
+      }
+    });
+
+    function ensureTicker() {
+      const hasRunning = tasks.some(task => task.timer?.status === 'running') || directTimer?.status === 'running';
+      if (hasRunning && !ticker) ticker = setInterval(updateTimerDisplays, 1000);
+      if (!hasRunning && ticker) {
+        clearInterval(ticker);
+        ticker = null;
+      }
+    }
+
+    function updateTimerDisplays() {
+      tasks.forEach(task => {
+        const el = document.querySelector(`[data-timer-for="${CSS.escape(task.id)}"]`);
+        if (el) el.textContent = formatDurationSeconds(getTaskElapsedSeconds(task));
+      });
+      if (directTimerValue) directTimerValue.textContent = formatDurationSeconds(getDirectTimerElapsedSeconds());
+    }
+
+    window.addEventListener('beforeunload', () => {
+      let changed = false;
+      tasks.forEach(task => {
+        if (task.timer?.status === 'running') {
+          task.timer.elapsedSeconds = getTaskElapsedSeconds(task);
+          task.timer.startedAt = new Date().toISOString();
+          changed = true;
+        }
+      });
+      if (directTimer?.status === 'running') {
+        directTimer.elapsedSeconds = getDirectTimerElapsedSeconds();
+        directTimer.startedAt = new Date().toISOString();
+        changed = true;
+      }
+      if (changed) saveState({ markUpdated: true, pushCloud: false });
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        const hasRunning = tasks.some(task => task.timer?.status === 'running') || directTimer?.status === 'running';
+        if (hasRunning) saveState({ markUpdated: true, pushCloud: true });
+      }
+    });
+
+    function setSyncStatus(text, mode = 'local') {
+      $('#syncStatus').textContent = text;
+      $('#syncDialogStatus').textContent = text;
+      const dot = $('#syncDot');
+      dot.className = 'status-dot';
+      if (mode === 'online') dot.classList.add('online');
+      if (mode === 'error') dot.classList.add('error');
+      if (mode === 'pending') dot.classList.add('pending');
+    }
+
+    function getFirebaseConfigFromStorage() {
+      const raw = localStorage.getItem(FIREBASE_CONFIG_KEY);
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return null; }
+    }
+
+    async function initFirebaseFromStorage() {
+      const config = getFirebaseConfigFromStorage();
+      if (config) $('#firebaseConfigInput').value = JSON.stringify(config, null, 2);
+      if (!config) {
+        setSyncStatus('本地模式：数据只保存在当前设备。', 'local');
+        return;
+      }
+      await initFirebase(config);
+    }
+
+    async function initFirebase(config) {
+      try {
+        if (firebaseApp) return;
+        await loadFirebaseModules();
+        firebaseApp = getApps().length ? getApps()[0] : initializeApp(config);
+        auth = getAuth(firebaseApp);
+        db = getFirestore(firebaseApp);
+        enableIndexedDbPersistence(db).catch(() => {});
+        onAuthStateChanged(auth, (user) => {
+          currentUser = user;
+          if (user) {
+            setSyncStatus(`已登录：${user.email}。正在监听云端同步。`, 'online');
+            startCloudListener();
+          } else {
+            stopCloudListener();
+            setSyncStatus('Firebase 已配置，但尚未登录。', 'pending');
+          }
+        });
+      } catch (error) {
+        setSyncStatus(`Firebase 初始化失败：${error.message}`, 'error');
+      }
+    }
+
+    function userDataRef() {
+      if (!db || !currentUser) return null;
+      return doc(db, 'users', currentUser.uid, 'data', 'main');
+    }
+
+    function startCloudListener() {
+      stopCloudListener();
+      const ref = userDataRef();
+      if (!ref) return;
+      unsubscribeCloud = onSnapshot(ref, async (snapshot) => {
+        if (!snapshot.exists()) {
+          await pushLocalStateToCloud('首次创建云端数据');
+          return;
+        }
+        const remote = snapshot.data();
+        if (remote.deviceId === DEVICE_ID || remote.updatedAtClient === lastCloudWriteAt) return;
+
+        const remoteTime = remote.updatedAtClient || '';
+        const localTime = updatedAtClient || '';
+        if (remoteTime && (!localTime || remoteTime > localTime)) {
+          applyingRemote = true;
+          const normalized = normalizeState(remote);
+          tasks = normalized.tasks;
+          directDoneLogs = normalized.directDoneLogs;
+          directTimer = normalized.directTimer || normalizeTimer({});
+          updatedAtClient = normalized.updatedAtClient || remoteTime;
+          render({ markUpdated: false, pushCloud: false });
+          applyingRemote = false;
+          setSyncStatus(`已从云端同步：${new Date(remoteTime).toLocaleString('zh-CN')}`, 'online');
+        } else if (localTime && (!remoteTime || localTime > remoteTime)) {
+          await pushLocalStateToCloud('本机数据较新，已上传');
+        }
+      }, (error) => {
+        setSyncStatus(`云端同步错误：${error.message}`, 'error');
+      });
+    }
+
+    function stopCloudListener() {
+      if (unsubscribeCloud) unsubscribeCloud();
+      unsubscribeCloud = null;
+    }
+
+    function scheduleCloudPush() {
+      if (!currentUser || !db) return;
+      clearTimeout(cloudPushTimer);
+      setSyncStatus('本机已修改，准备同步到云端。', 'pending');
+      cloudPushTimer = setTimeout(() => pushLocalStateToCloud(), 650);
+    }
+
+    async function pushLocalStateToCloud(reason = '已同步到云端') {
+      const ref = userDataRef();
+      if (!ref) return;
+      try {
+        const payload = {
+          ...getStatePayload(),
+          updatedAt: serverTimestamp()
+        };
+        lastCloudWriteAt = payload.updatedAtClient;
+        await setDoc(ref, payload, { merge: true });
+        setSyncStatus(`${reason}：${new Date(updatedAtClient).toLocaleString('zh-CN')}`, 'online');
+      } catch (error) {
+        setSyncStatus(`上传云端失败：${error.message}`, 'error');
+      }
+    }
+
+    async function pullCloudToLocal() {
+      const ref = userDataRef();
+      if (!ref) {
+        setSyncStatus('请先登录后再拉取云端数据。', 'pending');
+        return;
+      }
+      try {
+        const snapshot = await getDoc(ref);
+        if (!snapshot.exists()) {
+          setSyncStatus('云端还没有数据。', 'pending');
+          return;
+        }
+        applyingRemote = true;
+        const normalized = normalizeState(snapshot.data());
+        tasks = normalized.tasks;
+        directDoneLogs = normalized.directDoneLogs;
+        directTimer = normalized.directTimer || normalizeTimer({});
+        updatedAtClient = normalized.updatedAtClient || new Date().toISOString();
+        render({ markUpdated: false, pushCloud: false });
+        applyingRemote = false;
+        setSyncStatus('已从云端拉取到本机。', 'online');
+      } catch (error) {
+        setSyncStatus(`拉取云端失败：${error.message}`, 'error');
+      }
+    }
+
+    $('#syncBtn').addEventListener('click', () => syncDialog.showModal());
+    $('#closeSyncDialog').addEventListener('click', () => syncDialog.close());
+
+    $('#saveConfigBtn').addEventListener('click', async () => {
+      try {
+        const config = JSON.parse($('#firebaseConfigInput').value);
+        if (!config.apiKey || !config.projectId || !config.authDomain) throw new Error('缺少 apiKey / projectId / authDomain。');
+        localStorage.setItem(FIREBASE_CONFIG_KEY, JSON.stringify(config));
+        setSyncStatus('Firebase 配置已保存。', 'pending');
+        await initFirebase(config);
+      } catch (error) {
+        setSyncStatus(`配置格式错误：${error.message}`, 'error');
+      }
+    });
+
+    $('#removeConfigBtn').addEventListener('click', async () => {
+      if (!confirm('确定移除本机 Firebase 配置并退出登录吗？本地任务不会被删除。')) return;
+      try {
+        if (auth) await signOut(auth).catch(() => {});
+        stopCloudListener();
+        if (firebaseApp) await deleteApp(firebaseApp).catch(() => {});
+      } finally {
+        firebaseApp = null; auth = null; db = null; currentUser = null;
+        localStorage.removeItem(FIREBASE_CONFIG_KEY);
+        $('#firebaseConfigInput').value = '';
+        setSyncStatus('本地模式：数据只保存在当前设备。', 'local');
+      }
+    });
+
+    $('#registerBtn').addEventListener('click', async () => {
+      if (!auth) return setSyncStatus('请先保存 Firebase 配置。', 'pending');
+      try {
+        await createUserWithEmailAndPassword(auth, $('#emailInput').value.trim(), $('#passwordInput').value);
+        await pushLocalStateToCloud('账号已创建，本机数据已上传');
+      } catch (error) {
+        setSyncStatus(`注册失败：${error.message}`, 'error');
+      }
+    });
+
+    $('#loginBtn').addEventListener('click', async () => {
+      if (!auth) return setSyncStatus('请先保存 Firebase 配置。', 'pending');
+      try {
+        await signInWithEmailAndPassword(auth, $('#emailInput').value.trim(), $('#passwordInput').value);
+      } catch (error) {
+        setSyncStatus(`登录失败：${error.message}`, 'error');
+      }
+    });
+
+    $('#logoutBtn').addEventListener('click', async () => {
+      if (!auth) return;
+      await signOut(auth);
+      setSyncStatus('已退出登录。本机数据仍保留。', 'pending');
+    });
+
+    $('#uploadCloudBtn').addEventListener('click', async () => {
+      if (!confirm('确定用本机数据覆盖云端数据吗？')) return;
+      updatedAtClient = new Date().toISOString();
+      saveState({ markUpdated: false, pushCloud: false });
+      await pushLocalStateToCloud('已用本机数据覆盖云端');
+    });
+
+    $('#downloadCloudBtn').addEventListener('click', async () => {
+      if (!confirm('确定用云端数据覆盖本机数据吗？')) return;
+      await pullCloudToLocal();
+    });
+
+    function isStandaloneMode() {
+      return window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    }
+
+    function isIosLikeDevice() {
+      return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function refreshInstallButton() {
+      if (!isStandaloneMode()) $('#installBtn').hidden = false;
+    }
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      $('#installBtn').hidden = false;
+    });
+
+    $('#installBtn').addEventListener('click', async () => {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        $('#installBtn').hidden = true;
+        return;
+      }
+      $('#installDialog').showModal();
+    });
+
+    $('#closeInstallDialog').addEventListener('click', () => $('#installDialog').close());
+    refreshInstallButton();
+    if (isIosLikeDevice() && !isStandaloneMode()) $('#installBtn').textContent = '安装到主屏幕';
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+
+    dateInput.addEventListener('change', () => setSelectedDate(dateInput.value));
+    $('#prevDayBtn').addEventListener('click', () => shiftSelectedDate(-1));
+    $('#nextDayBtn').addEventListener('click', () => shiftSelectedDate(1));
+    $('#todayBtn').addEventListener('click', () => setSelectedDate(getLocalDateKey(new Date())));
+
+    doneStartInput.addEventListener('change', updateDoneDurationPreview);
+    doneStartInput.addEventListener('input', updateDoneDurationPreview);
+    doneEndInput.addEventListener('change', updateDoneDurationPreview);
+    doneEndInput.addEventListener('input', updateDoneDurationPreview);
+    updateSelectedDateUi();
+    setPlanDefaultTime();
+    setDirectDoneDefaultTimes();
+
+    render({ markUpdated: false, pushCloud: false });
+    initFirebaseFromStorage();
+  </script>
+</body>
+</html>
